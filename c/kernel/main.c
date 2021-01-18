@@ -185,8 +185,9 @@ void untar(const char * filename)
 	int fd = open(filename, O_RDWR);
 	assert(fd != -1);
 
+	// 为啥设置这么一个值？
 	char buf[SECTOR_SIZE * 16];
-	int chunk = sizeof(buf);
+	int chunk = sizeof(buf);					// chunk = 512 * 16 * 8 = 65536 = 2的16次方
 
 	while (1) {
 		read(fd, buf, SECTOR_SIZE);
@@ -202,6 +203,7 @@ void untar(const char * filename)
 			f_len = (f_len * 8) + (*p++ - '0'); /* octal */
 
 		int bytes_left = f_len;
+		// 最后是一个全零的tar结构
 		int fdout = open(phdr->name, O_CREAT | O_RDWR);
 		if (fdout == -1) {
 			printf("    failed to extract file: %s\n", phdr->name);
@@ -210,6 +212,11 @@ void untar(const char * filename)
 		}
 		printf("    %s (%d bytes)\n", phdr->name, f_len);
 		while (bytes_left) {
+			// 为何会有这么一句？我会直接读取bytes_lefe字节数据。
+			// 每次读取数据的单位是扇区，故有这句：((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE
+			// 多看了几次，就想到了这点。我还难以想到，只是理解别人写出来的罢了。
+			// 心算理解过程比较费事，我索性用了笔算。186 * 78 等于多少尚且需用笔算，这个理解过程涉及三步呢，用笔算也没啥丢人的。
+			// 唯一不理解的点，为啥最多一次读取chunk（即65536）个字节？
 			int iobytes = min(chunk, bytes_left);
 			read(fd, buf,
 			     ((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE);

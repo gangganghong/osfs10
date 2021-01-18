@@ -228,6 +228,7 @@ PRIVATE void cleanup(struct proc * proc)
 	msg2parent.type = SYSCALL_RET;
 	msg2parent.PID = proc2pid(proc);
 	msg2parent.STATUS = proc->exit_status;
+	// 理解不了IPC机制。这里，发给父进程后，究竟执行了什么？
 	send_recv(SEND, proc->p_parent, &msg2parent);
 
 	proc->p_flags = FREE_SLOT;
