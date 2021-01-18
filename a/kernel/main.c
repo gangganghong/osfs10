@@ -65,7 +65,7 @@ PUBLIC int kernel_main()
 
 		if (strcmp(t->name, "INIT") != 0) {
 			p->ldts[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CS >> 3];
-			p->ldts[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DS >> 3];
+			p->ldts[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DS >> 3];		// -0x10 >> 3 结构是多少？0吗？说不通。理解不了这里。
 
 			/* change the DPLs */
 			p->ldts[INDEX_LDT_C].attr1  = DA_C   | priv << 5;
@@ -94,10 +94,14 @@ PUBLIC int kernel_main()
 		}
 
 		p->regs.cs = INDEX_LDT_C << 3 |	SA_TIL | rpl;
+		/***************************************/
+		// 将p->regs.ds、p->regs.es、p->regs.fs、p->regs.ss赋值为INDEX_LDT_RW << 3 | SA_TIL | rpl。
+		// 一种我感觉陌生或错误的语法而已。
 		p->regs.ds =
 			p->regs.es =
 			p->regs.fs =
 			p->regs.ss = INDEX_LDT_RW << 3 | SA_TIL | rpl;
+		/***************************************/
 		p->regs.gs = (SELECTOR_KERNEL_GS & SA_RPL_MASK) | rpl;
 		p->regs.eip	= (u32)t->initial_eip;
 		p->regs.esp	= (u32)stk;

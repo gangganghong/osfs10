@@ -36,6 +36,7 @@ PUBLIC int do_fork()
 	/* find a free slot in proc_table */
 	struct proc* p = proc_table;
 	int i;
+	// 进程表数组中存在许多没有被使用的进程表吗？在哪里创建的空闲进程表？
 	for (i = 0; i < NR_TASKS + NR_PROCS; i++,p++)
 		if (p->p_flags == FREE_SLOT)
 			break;
@@ -48,16 +49,19 @@ PUBLIC int do_fork()
 	assert(i < NR_TASKS + NR_PROCS);
 
 	/* duplicate the process table */
-	int pid = mm_msg.source;
-	u16 child_ldt_sel = p->ldt_sel;
-	*p = proc_table[pid];
-	p->ldt_sel = child_ldt_sel;
+	int pid = mm_msg.source;			// 父进程ID
+	u16 child_ldt_sel = p->ldt_sel;		// 子进程的ldt_sel，ldt选择子。奇怪，子进程哪里来的选择子？在kernel/main.c的kernel_main中初始化的。
+	*p = proc_table[pid];				// 获取父进程，将p指向父进程，复制了父进程的进程表
+	p->ldt_sel = child_ldt_sel;			// 
 	p->p_parent = pid;
 	sprintf(p->name, "%s_%d", proc_table[pid].name, child_pid);
 
 	/* duplicate the process: T, D & S */
 	struct descriptor * ppd;
 
+	// 代码段
+	// reassembly 是利用GDT的结构做的处理。
+	// GDT中，有个元素会影响段界限的单位是1字节还是4KB。就是下文的caller_T_size。
 	/* Text segment */
 	ppd = &proc_table[pid].ldts[INDEX_LDT_C];
 	/* base of T-seg, in bytes */
@@ -73,7 +77,7 @@ PUBLIC int do_fork()
 	int caller_T_size  = ((caller_T_limit + 1) *
 			      ((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8)) ?
 			       4096 : 1));
-
+	// 数据段和堆栈
 	/* Data & Stack segments */
 	ppd = &proc_table[pid].ldts[INDEX_LDT_RW];
 	/* base of D&S-seg, in bytes */
@@ -89,7 +93,7 @@ PUBLIC int do_fork()
 	int caller_D_S_size  = ((caller_T_limit + 1) *
 				((ppd->limit_high_attr2 & (DA_LIMIT_4K >> 8)) ?
 				 4096 : 1));
-
+	// 代码段、数据段和堆栈段指向相同的地址空间。
 	/* we don't separate T, D & S segments, so we have: */
 	assert((caller_T_base  == caller_D_S_base ) &&
 	       (caller_T_limit == caller_D_S_limit) &&
@@ -97,6 +101,7 @@ PUBLIC int do_fork()
 
 	/* base of child proc, T, D & S segments share the same space,
 	   so we allocate memory just once */
+	// 子进程的内存的初始值 = ? 理解不了这个计算方法。
 	int child_base = alloc_mem(child_pid, caller_T_size);
 	/* int child_limit = caller_T_limit; */
 	printl("{MM} 0x%x <- 0x%x (0x%x bytes)\n",
@@ -104,6 +109,7 @@ PUBLIC int do_fork()
 	/* child is a copy of the parent */
 	phys_copy((void*)child_base, (void*)caller_T_base, caller_T_size);
 
+	// 每个进程都有自己独立的地址空间，在这里实现了！
 	/* child's LDT */
 	init_desc(&p->ldts[INDEX_LDT_C],
 		  child_base,

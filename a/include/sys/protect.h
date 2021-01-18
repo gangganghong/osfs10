@@ -78,7 +78,7 @@ struct tss {
 #define	INDEX_LDT_FIRST		5
 /* 选择子 */
 #define	SELECTOR_DUMMY		   0		/* ┓                          */
-#define	SELECTOR_FLAT_C		0x08		/* ┣ LOADER 里面已经确定了的. */
+#define	SELECTOR_FLAT_C		0x08		/* ┣ LOADER 里面已经确定了的. */ // 确实，在LOADER里面确定的。选择子是GDT在GDT表中相对于第一个空GDT的偏移量，单位是8个字节，即一个GDT的大小。
 #define	SELECTOR_FLAT_RW	0x10		/* ┃                          */
 #define	SELECTOR_VIDEO		(0x18+3)	/* ┛<-- RPL=3                 */
 #define	SELECTOR_TSS		0x20		/* TSS. 从外层跳到内存时 SS 和 ESP 的值从里面获得. */

@@ -109,7 +109,7 @@ PUBLIC int alloc_mem(int pid, int memsize)
 		      memsize,
 		      PROC_IMAGE_SIZE_DEFAULT);
 	}
-
+	// 是不是从 PROCS_BASE 开始往------->32M分配内存？若是，这个计算公式不正确。若不是，那该怎么理解？
 	int base = PROCS_BASE +
 		(pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
 

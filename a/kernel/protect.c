@@ -175,13 +175,27 @@ PUBLIC void init_prot()
 		  DA_386TSS);
 	tss.iobase = sizeof(tss); /* No IO permission bitmap */
 
+	// 为每个进程建立gdt的选择子，并存储到进程表中。根据这个选择子（它是GDT的选择子，但是这个GDT却是LDT描述符），找到这个今进程的LDT描述符，再根据LDT找到这个进程使用的段。
+	// 不理解。LDT已经存储在进程表struct proc中了，为啥不直接从进程表中获取还要绕这么大个圈？
 	/* Fill the LDT descriptors of each proc in GDT  */
 	int i;
 	for (i = 0; i < NR_TASKS + NR_PROCS; i++) {
 		memset(&proc_table[i], 0, sizeof(struct proc));
 
+		// 选择子结构
+		/********************************************************
+		*
+		*	15							3		2				0
+		*	————————————————————————————————————————————————————
+		*	|	描述符索引值				|		|				|
+		*	|							|T1		|RPL			|
+		*	————————————————————————————————————————————————————
+		*	SELECTOR_LDT_FIRST 是 T1 和 RPL。 i << 3 是 索引值。
+		*********************************************************/
 		proc_table[i].ldt_sel = SELECTOR_LDT_FIRST + (i << 3);
 		assert(INDEX_LDT_FIRST + i < GDT_SIZE);
+		// 第一个gdt是空的，其他gdt的索引从1开始，此处，i 仍是 i，即不受前面 i << 3影响。
+		// 建立gdt
 		init_desc(&gdt[INDEX_LDT_FIRST + i],
 			  makelinear(SELECTOR_KERNEL_DS, proc_table[i].ldts),
 			  LDT_SIZE * sizeof(struct descriptor) - 1,

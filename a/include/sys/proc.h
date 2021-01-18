@@ -31,7 +31,7 @@ struct stackframe {	/* proc_ptr points here				↑ Low			*/
 struct proc {
 	struct stackframe regs;    /* process registers saved in stack frame */
 
-	u16 ldt_sel;               /* gdt selector giving ldt base and limit */
+	u16 ldt_sel;               /* gdt selector giving ldt base and limit */ // 选择子的长度是16个字节。命名不好，让我误以为是ldt的选择子。
 	struct descriptor ldts[LDT_SIZE]; /* local descs for code and data */
 
         int ticks;                 /* remained ticks */
@@ -80,6 +80,7 @@ struct task {
 
 /* Number of tasks & processes */
 #define NR_TASKS		5
+// Linux进程也有最大进程数量限制。这里预留进程表，实现方法或许与Linux系统类似。
 #define NR_PROCS		32
 #define NR_NATIVE_PROCS		4
 #define FIRST_PROC		proc_table[0]
