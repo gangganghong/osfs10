@@ -60,6 +60,7 @@ PUBLIC int execl(const char *path, const char *arg, ...)
 PUBLIC int execv(const char *path, char * argv[])
 {
 	// 书中图10.5 argv，是被调用程序echo中main函数所需的完整堆栈。我们这个execv函数提供的堆栈，只是argv部分的。
+	// 它完成的，只是指针数组这部分。前面的参数3和后面的那些字符串，都不是这个函数完成的。
 	// 字符串数组的二进制形式是：03450(即字符形式的\0)78240(\0)。这是我的猜测。
 	char **p = argv;
 	char arg_stack[PROC_ORIGIN_STACK];
@@ -93,10 +94,19 @@ PUBLIC int execv(const char *path, char * argv[])
 		assert(stack_len + strlen(*p) + 1 < PROC_ORIGIN_STACK);
 		// *p是参数字符串，arg_stack[stack_len]是什么？是具体的值吗？对应于汇编中的eax，而&arg_stack[stack_len]是汇编中的[eax]。
 		// 所以，这句，我的理解是，把参数字符串复制到&arg_stack[stack_len]这个内存地址（以这个地址开始的一块内存区域）
+		// 上面的注释，我有点怀疑它们的正确性。我又认为，*p是个内存地址，把这个内存地址复制到&arg_stack[stack_len]开始的一块内存区域。
+		// char * argv[] 是一个指针数组，即，是一块连续的内存区域，在这个区域内，每块内存里存放的是一个值，这个值也是一个内存地址，而这个内存地址的内存里，存放的是参数。
+		// 若没有使用分页机制等内存管理机制，可以文件或内存中查看二进制数据，验证上面的推测。
 		strcpy(&arg_stack[stack_len], *p);
 		// 这块内存的长度
 		stack_len += strlen(*p);
 		// 由于存储的是字符串，需要在末尾加0，内存长度也要加1个单位，即加1个字节。
+		// 上面的注释不正确，存储的是内存地址。不知道为啥要加0。
+		// 我写代码的时候，很难写出这句。我不觉得有必要写这句。
+		// 我不理解，strcpy(&arg_stack[stack_len], *p) 用 &，这里用arg_stack[stack_len]，后面能不能也用 &arg_stack[stack_len]。
+		// 仍不失很理解啊。两者都是给某个内存地址的内存赋值。这是正确的废话。赋值，当然是将数据放到某片内存中。前者，是函数要求那个参数是一个内存地址，而后者，要求直接对内存中的数据进行操作。
+		// 就这样。
+		// 为啥要加个0，我仍然不明白。存疑存疑！
 		arg_stack[stack_len] = 0;
 		stack_len++;
 	}
