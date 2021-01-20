@@ -40,6 +40,30 @@ PUBLIC int do_rdwt()
 
 	int src = fs_msg.source;		/* caller proc nr. */
 
+
+
+	/*(gdb) p *pcaller->filp[1]
+$25 = {fd_mode = -268370093, fd_pos = -268370093, fd_cnt = -268370093,
+  fd_inode = 0xf000ff53}
+(gdb) p *pcaller->filp[2]
+$26 = {fd_mode = -268370093, fd_pos = -268370093, fd_cnt = -268370093,
+  fd_inode = 0xf000ff53}
+(gdb) p *pcaller->filp[3]
+$27 = {fd_mode = -268370093, fd_pos = -268370093, fd_cnt = -268370093,
+  fd_inode = 0xf000ff53}
+(gdb) p *pcaller->filp[1]
+$28 = {fd_mode = -268370093, fd_pos = -268370093, fd_cnt = -268370093,
+  fd_inode = 0xf000ff53}
+(gdb) p *pcaller->filp[0]
+$29 = {fd_mode = 2, fd_pos = 0, fd_cnt = 1,
+  fd_inode = 0x13978 <inode_table+88>}
+(gdb) p *pcaller->filp[0]->fd_inode
+$30 = {i_mode = 32768, i_size = 32616, i_start_sect = 2317,
+  i_nr_sects = 2048, _unused = '\000' <repeats 15 times>, i_dev = 800,
+  i_cnt = 1, i_num = 6}
+(gdb) n*/
+	// 不满足assert条件
+
 	assert((pcaller->filp[fd] >= &f_desc_table[0]) &&
 	       (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
 

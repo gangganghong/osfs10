@@ -213,6 +213,7 @@ void untar(const char * filename)
 			int iobytes = min(chunk, bytes_left);
 			read(fd, buf,
 			     ((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE);
+			// in inval_opcode
 			write(fdout, buf, iobytes);
 			bytes_left -= iobytes;
 		}
