@@ -247,10 +247,14 @@ void Init()
 	if (pid != 0) { /* parent process */
 		int s;
 		int child = wait(&s);
+		//int child = 89;
+		//s = 5;
 		printf("child (%d) exited with status: %d.\n", child, s);
 	}
 	else {	/* child process */
+		printf("child start\n");
 		execl("/echo", "echo", "hello", "world", 0);
+		printf("child end\n");
 	}
 
 	while (1) {
