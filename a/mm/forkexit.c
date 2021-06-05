@@ -50,6 +50,8 @@ PUBLIC int do_fork()
 	/* duplicate the process table */
 	int pid = mm_msg.source;
 	u16 child_ldt_sel = p->ldt_sel;
+	// 会用指针了。但是，我仍然不能很快解释指针的使用方法。
+	// 和 p = &proc_table[pid] 的作用不同。
 	*p = proc_table[pid];
 	p->ldt_sel = child_ldt_sel;
 	p->p_parent = pid;
@@ -105,6 +107,8 @@ PUBLIC int do_fork()
 	phys_copy((void*)child_base, (void*)caller_T_base, caller_T_size);
 
 	/* child's LDT */
+	// 我认为，此时，p是父进程，这里修改的是父进程，为什么注释说是修改子进程？
+	// 上面的注释有问题，p是子进程。理由请看上面的*p = proc_table[pid]。
 	init_desc(&p->ldts[INDEX_LDT_C],
 		  child_base,
 		  (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,
