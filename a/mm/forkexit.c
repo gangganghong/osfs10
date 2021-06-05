@@ -49,19 +49,25 @@ PUBLIC int do_fork()
 	assert(i < NR_TASKS + NR_PROCS);
 
 	/* duplicate the process table */
-<<<<<<< HEAD
 	int pid = mm_msg.source;			// 父进程ID
-	u16 child_ldt_sel = p->ldt_sel;		// 子进程的ldt_sel，ldt选择子。奇怪，子进程哪里来的选择子？在kernel/main.c的kernel_main中初始化的。
-	*p = proc_table[pid];				// 获取父进程，将p指向父进程，复制了父进程的进程表
-	p->ldt_sel = child_ldt_sel;			// 
-=======
-	int pid = mm_msg.source;
-	u16 child_ldt_sel = p->ldt_sel;
+	// 子进程的ldt_sel，ldt选择子。奇怪，子进程哪里来的选择子？
+	// 在kernel/main.c的kernel_main中初始化的。这句话不正确。
+	// 进程表数组中的每个进程表的ldt_sel都是在init_prot中初始化的。
+	// ldt_sel 是GDT的一个选择子，指向GDT中的一个描述符，这个描述符
+	// 描述ldt表。ldt表在进程表中。
+	// 这块内存，本来存储默认空闲进程表，后来被更换为父进程的进程表。
+	// 同时，这块内存中原本存储ldt_sel的内存区域存储符进程的ldt_sel。
+	// 在子进程表中，子进程的ldt_sel指向父进程的ldts。父进程的ldts在父进程表中。
+	// 当然，子进程表中当前存储ldts的区域存储的ldts和父进程的ldts相同。
+	// 可是，很快，我就会把子进程表中ldts修改掉。
+	// 而且，让子进程表的ldts存储在父进程表中，这是不合理的。
+	// 所以，应该把子进程表中的ldt_sel更改为指向本进程表的ldts。把ldt_sel更换
+	// 为子进程表原来的ldt_sel即可。
+	u16 child_ldt_sel = p->ldt_sel;	
 	// 会用指针了。但是，我仍然不能很快解释指针的使用方法。
 	// 和 p = &proc_table[pid] 的作用不同。
-	*p = proc_table[pid];
-	p->ldt_sel = child_ldt_sel;
->>>>>>> v1
+	*p = proc_table[pid];		// 获取父进程，将p指向父进程，复制了父进程的进程表
+	p->ldt_sel = child_ldt_sel; 
 	p->p_parent = pid;
 	sprintf(p->name, "%s_%d", proc_table[pid].name, child_pid);
 
@@ -116,12 +122,17 @@ PUBLIC int do_fork()
 	printl("{MM} 0x%x <- 0x%x (0x%x bytes)\n",
 	       child_base, caller_T_base, caller_T_size);
 	/* child is a copy of the parent */
+	// 子进程使用的内存是子进程内存中的数据的拷贝。
 	phys_copy((void*)child_base, (void*)caller_T_base, caller_T_size);
 
 	// 每个进程都有自己独立的地址空间，在这里实现了！
 	/* child's LDT */
 	// 我认为，此时，p是父进程，这里修改的是父进程，为什么注释说是修改子进程？
 	// 上面的注释有问题，p是子进程。理由请看上面的*p = proc_table[pid]。
+	// 子进程的两个ldt描述符描述子进程的内存空间。代码段和数据段使用相同的内存空间，
+	// 所以，初始化两个ldt描述符的base、limit相同，但是属性不同。
+	// 这两条语句的唯一难点是描述符的属性。
+	// 我不记得描述符的属性知识了，暂且跳过，回头再看。
 	init_desc(&p->ldts[INDEX_LDT_C],
 		  child_base,
 		  (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,
@@ -132,6 +143,8 @@ PUBLIC int do_fork()
 		  DA_LIMIT_4K | DA_32 | DA_DRW | PRIVILEGE_USER << 5);
 
 	/* tell FS, see fs_fork() */
+	// 为子进程的文件描述符的fd_cnt加1，把子进程的文件描述符关联的inode的i_cnt加1。
+	// 主进程的文件描述符的fd_cnt不需要在这里修改。在打开文件的时候，已经修改过了。
 	MESSAGE msg2fs;
 	msg2fs.type = FORK;
 	msg2fs.PID = child_pid;

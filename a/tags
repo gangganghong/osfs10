@@ -36,7 +36,7 @@ BootMessage	boot/boot.asm	/^BootMessage:		db	"Booting  "; 9字节, 不够则用�
 CAPS_LOCK	include/sys/keyboard.h	52;"	d
 CASCADE_IRQ	include/sys/const.h	122;"	d
 CC	Makefile	/^CC		= gcc$/;"	m
-CFLAGS	Makefile	/^CFLAGS		= -I include\/ -I include\/sys\/ -c -fno-builtin -Wall$/;"	m
+CFLAGS	Makefile	/^CFLAGS		= -I include\/ -I include\/sys\/ -c -fno-builtin -Wall -m32 -g$/;"	m
 CLK_ELE	include/sys/const.h	92;"	d
 CLK_HEALTH	include/sys/const.h	107;"	d
 CLK_IO	include/sys/const.h	98;"	d
@@ -126,7 +126,7 @@ F7	include/sys/keyboard.h	63;"	d
 F8	include/sys/keyboard.h	64;"	d
 F9	include/sys/keyboard.h	65;"	d
 FD	include/sys/const.h	196;"	d
-FIRST_PROC	include/sys/proc.h	85;"	d
+FIRST_PROC	include/sys/proc.h	86;"	d
 FLAGS	include/sys/const.h	198;"	d
 FLAG_ALT_L	include/sys/keyboard.h	25;"	d
 FLAG_ALT_R	include/sys/keyboard.h	26;"	d
@@ -247,9 +247,9 @@ LABEL_SEARCH_IN_ROOT_DIR_BEGIN	boot/boot.asm	/^LABEL_SEARCH_IN_ROOT_DIR_BEGIN:$/
 LABEL_SEARCH_IN_ROOT_DIR_BEGIN	boot/loader.asm	/^LABEL_SEARCH_IN_ROOT_DIR_BEGIN:$/;"	l
 LABEL_START	boot/boot.asm	/^LABEL_START:	$/;"	l
 LABEL_START	boot/loader.asm	/^LABEL_START:			; <--- 从这里开始 *************$/;"	l
-LAST_PROC	include/sys/proc.h	86;"	d
+LAST_PROC	include/sys/proc.h	87;"	d
 LD	Makefile	/^LD		= ld$/;"	m
-LDFLAGS	Makefile	/^LDFLAGS		= -Ttext $(ENTRYPOINT) -Map krnl.map$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS		= -Ttext $(ENTRYPOINT) -Map krnl.map -m elf_i386$/;"	m
 LDT_SIZE	include/sys/protect.h	92;"	d
 LED_CODE	include/sys/const.h	78;"	d
 LEFT	include/sys/keyboard.h	81;"	d
@@ -317,10 +317,10 @@ NR_FILES	include/sys/const.h	274;"	d
 NR_FILE_DESC	include/sys/const.h	275;"	d
 NR_INODE	include/sys/const.h	276;"	d
 NR_IRQ	include/sys/const.h	119;"	d
-NR_NATIVE_PROCS	include/sys/proc.h	84;"	d
+NR_NATIVE_PROCS	include/sys/proc.h	85;"	d
 NR_PART_PER_DRIVE	include/sys/const.h	246;"	d
 NR_PRIM_PER_DRIVE	include/sys/const.h	249;"	d
-NR_PROCS	include/sys/proc.h	83;"	d
+NR_PROCS	include/sys/proc.h	84;"	d
 NR_SCAN_CODES	include/sys/keyboard.h	17;"	d
 NR_SECTS_FOR_LOG	include/sys/config.h	29;"	d
 NR_SUB_PER_DRIVE	include/sys/const.h	248;"	d
@@ -379,10 +379,10 @@ PRIVATE	include/type.h	13;"	d
 PRIVILEGE_KRNL	include/sys/const.h	35;"	d
 PRIVILEGE_TASK	include/sys/const.h	36;"	d
 PRIVILEGE_USER	include/sys/const.h	37;"	d
-PROCS_BASE	include/sys/proc.h	96;"	d
-PROC_IMAGE_SIZE_DEFAULT	include/sys/proc.h	97;"	d
+PROCS_BASE	include/sys/proc.h	97;"	d
+PROC_IMAGE_SIZE_DEFAULT	include/sys/proc.h	98;"	d
 PROC_NR	include/sys/const.h	202;"	d
-PROC_ORIGIN_STACK	include/sys/proc.h	98;"	d
+PROC_ORIGIN_STACK	include/sys/proc.h	99;"	d
 PUBLIC	include/type.h	12;"	d
 P_EXTENDED	include/sys/const.h	268;"	d
 P_PRIMARY	include/sys/const.h	267;"	d
@@ -454,17 +454,17 @@ SET_LOG_SECT_SMAP_AT_STARTUP	include/sys/config.h	27;"	d
 SHIFT_L	include/sys/keyboard.h	44;"	d
 SHIFT_R	include/sys/keyboard.h	45;"	d
 SLEEP	include/sys/keyboard.h	86;"	d
-STACK_SIZE_DEFAULT	include/sys/proc.h	101;"	d
-STACK_SIZE_FS	include/sys/proc.h	105;"	d
-STACK_SIZE_HD	include/sys/proc.h	104;"	d
-STACK_SIZE_INIT	include/sys/proc.h	107;"	d
-STACK_SIZE_MM	include/sys/proc.h	106;"	d
-STACK_SIZE_SYS	include/sys/proc.h	103;"	d
-STACK_SIZE_TESTA	include/sys/proc.h	108;"	d
-STACK_SIZE_TESTB	include/sys/proc.h	109;"	d
-STACK_SIZE_TESTC	include/sys/proc.h	110;"	d
-STACK_SIZE_TOTAL	include/sys/proc.h	112;"	d
-STACK_SIZE_TTY	include/sys/proc.h	102;"	d
+STACK_SIZE_DEFAULT	include/sys/proc.h	102;"	d
+STACK_SIZE_FS	include/sys/proc.h	106;"	d
+STACK_SIZE_HD	include/sys/proc.h	105;"	d
+STACK_SIZE_INIT	include/sys/proc.h	108;"	d
+STACK_SIZE_MM	include/sys/proc.h	107;"	d
+STACK_SIZE_SYS	include/sys/proc.h	104;"	d
+STACK_SIZE_TESTA	include/sys/proc.h	109;"	d
+STACK_SIZE_TESTB	include/sys/proc.h	110;"	d
+STACK_SIZE_TESTC	include/sys/proc.h	111;"	d
+STACK_SIZE_TOTAL	include/sys/proc.h	113;"	d
+STACK_SIZE_TTY	include/sys/proc.h	103;"	d
 START_ADDR_H	include/sys/const.h	84;"	d
 START_ADDR_L	include/sys/const.h	85;"	d
 STAT	include/sys/const.h	/^	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,$/;"	e	enum:msgtype
@@ -883,7 +883,7 @@ lba_low	include/sys/hd.h	/^	u8	lba_low;$/;"	m	struct:hd_cmd
 lba_mid	include/sys/hd.h	/^	u8	lba_mid;$/;"	m	struct:hd_cmd
 ldt	include/sys/protect.h	/^	u32	ldt;$/;"	m	struct:tss
 ldt_seg_linear	kernel/proc.c	/^PUBLIC int ldt_seg_linear(struct proc* p, int idx)$/;"	f
-ldt_sel	include/sys/proc.h	/^	u16 ldt_sel;               \/* gdt selector giving ldt base and limit *\/$/;"	m	struct:proc
+ldt_sel	include/sys/proc.h	/^	u16 ldt_sel;               \/* gdt selector giving ldt base and limit *\/ \/\/ 选择子的长度是16个字节。命名不好，让我误以为是ldt的选择子。$/;"	m	struct:proc
 ldts	include/sys/proc.h	/^	struct descriptor ldts[LDT_SIZE]; \/* local descs for code and data *\/$/;"	m	struct:proc	typeref:struct:proc::descriptor
 limit_high_attr2	include/sys/protect.h	/^	u8	limit_high_attr2;	\/* G(1) D(1) 0(1) AVL(1) LimitHigh(4) *\/$/;"	m	struct:descriptor
 limit_low	include/sys/protect.h	/^	u16	limit_low;		\/* Limit *\/$/;"	m	struct:descriptor
