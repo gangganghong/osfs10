@@ -49,10 +49,19 @@ PUBLIC int do_fork()
 	assert(i < NR_TASKS + NR_PROCS);
 
 	/* duplicate the process table */
+<<<<<<< HEAD
 	int pid = mm_msg.source;			// 父进程ID
 	u16 child_ldt_sel = p->ldt_sel;		// 子进程的ldt_sel，ldt选择子。奇怪，子进程哪里来的选择子？在kernel/main.c的kernel_main中初始化的。
 	*p = proc_table[pid];				// 获取父进程，将p指向父进程，复制了父进程的进程表
 	p->ldt_sel = child_ldt_sel;			// 
+=======
+	int pid = mm_msg.source;
+	u16 child_ldt_sel = p->ldt_sel;
+	// 会用指针了。但是，我仍然不能很快解释指针的使用方法。
+	// 和 p = &proc_table[pid] 的作用不同。
+	*p = proc_table[pid];
+	p->ldt_sel = child_ldt_sel;
+>>>>>>> v1
 	p->p_parent = pid;
 	sprintf(p->name, "%s_%d", proc_table[pid].name, child_pid);
 
@@ -111,6 +120,8 @@ PUBLIC int do_fork()
 
 	// 每个进程都有自己独立的地址空间，在这里实现了！
 	/* child's LDT */
+	// 我认为，此时，p是父进程，这里修改的是父进程，为什么注释说是修改子进程？
+	// 上面的注释有问题，p是子进程。理由请看上面的*p = proc_table[pid]。
 	init_desc(&p->ldts[INDEX_LDT_C],
 		  child_base,
 		  (PROC_IMAGE_SIZE_DEFAULT - 1) >> LIMIT_4K_SHIFT,

@@ -53,12 +53,13 @@ PUBLIC int do_exec()
 
 	/* read the file */
 	int fd = open(pathname, O_RDWR);
+	printf("pathname = %s\n", pathname);
 	if (fd == -1)
 		return -1;
 	assert(s.st_size < MMBUF_SIZE);
 	read(fd, mmbuf, s.st_size);
 	close(fd);
-
+	printf("1\n");
 	/* overwrite the current proc image with the new one */
 	Elf32_Ehdr* elf_hdr = (Elf32_Ehdr*)(mmbuf);
 	int i;
@@ -74,7 +75,7 @@ PUBLIC int do_exec()
 				  prog_hdr->p_filesz);
 		}
 	}
-
+	printf("2\n");
 	/* setup the arg stack */
 	int orig_stack_len = mm_msg.BUF_LEN;
 	char stackcopy[PROC_ORIGIN_STACK];
@@ -92,7 +93,7 @@ PUBLIC int do_exec()
 		for (; *q != 0; q++,argc++)
 			*q += delta;
 	}
-
+	printf("3\n");
 	phys_copy((void*)va2la(src, orig_stack),
 		  (void*)va2la(TASK_MM, stackcopy),
 		  orig_stack_len);
@@ -105,6 +106,6 @@ PUBLIC int do_exec()
 	proc_table[src].regs.esp = PROC_IMAGE_SIZE_DEFAULT - PROC_ORIGIN_STACK;
 
 	strcpy(proc_table[src].name, pathname);
-
+	printf("4\n");
 	return 0;
 }
