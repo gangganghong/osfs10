@@ -551,6 +551,8 @@ PRIVATE int fs_exit()
 			/* release the file desc slot */
 			if (--p->filp[i]->fd_cnt == 0)
 				p->filp[i]->fd_inode = 0;
+			// 上面的那个判断，有必要吗？
+			// 不理解。说不清楚。
 			p->filp[i] = 0;
 		}
 	}
