@@ -64,6 +64,7 @@ $30 = {i_mode = 32768, i_size = 32616, i_start_sect = 2317,
 (gdb) n*/
 	// 不满足assert条件
 
+	//printf("fd = %d\n", 3);
 	assert((pcaller->filp[fd] >= &f_desc_table[0]) &&
 	       (pcaller->filp[fd] < &f_desc_table[NR_FILE_DESC]));
 

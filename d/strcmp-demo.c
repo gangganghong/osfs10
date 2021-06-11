@@ -13,6 +13,18 @@ int main(void){
 
         int result2 = strcmp(a2, b2);
         printf("a2 = %s, b2 = %s, result2 = %d\n", a2, b2, result2);
+	
+	char *h = "hello";
+	char *hi = "hi";
+	char *world = "world";
+	// char **t = {h, hi, world};
+	char * t[3] = {h, hi, world};
+	int len = strlen(*t);
+	char *str = "";
+	strcpy(str, *t);
+	printf("a = %d\n", 5);
+	
+
 	return 0;
 
 }

@@ -87,6 +87,12 @@ PRIVATE void init_mm()
 
 	/* print memory size */
 	printl("{MM} memsize:%dMB\n", memory_size / (1024 * 1024));
+
+
+	int fd_stdin  = open("/dev_tty0", O_RDWR);
+        assert(fd_stdin  == 0);
+        int fd_stdout = open("/dev_tty0", O_RDWR);
+        assert(fd_stdout == 1);
 }
 
 /*****************************************************************************

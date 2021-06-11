@@ -193,6 +193,8 @@ void untar(const char * filename)
 		if (buf[0] == 0)
 			break;
 
+		// 资料说tar文件的文件头是512字节，但是，struct posix_tar_header 只有
+		// 510字节。怎么理解？
 		struct posix_tar_header * phdr = (struct posix_tar_header *)buf;
 
 		/* calculate the file size */
@@ -210,6 +212,7 @@ void untar(const char * filename)
 		}
 		printf("    %s (%d bytes)\n", phdr->name, f_len);
 		while (bytes_left) {
+			// 我的疑问是：文件数据从第二个扇区开始吗？
 			int iobytes = min(chunk, bytes_left);
 			read(fd, buf,
 			     ((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE);

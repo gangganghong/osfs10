@@ -67,6 +67,8 @@ PUBLIC int execv(const char *path, char * argv[])
 	int stack_len = 0;
 
 	// 有多少个参数
+	// 这个循环能统计出有多少个参数吗？
+	// 用gdb断点，在循环结束时，*p的值不会使循环退出啊。
 	while(*p++) {
 		assert(stack_len + 2 * sizeof(char*) < PROC_ORIGIN_STACK);
 		stack_len += sizeof(char*);
@@ -77,6 +79,9 @@ PUBLIC int execv(const char *path, char * argv[])
 	// 上面的注释，是错误的。
 	// 书上的说法，将指针数组的末尾赋零。原因，我不知道。但是，和书上的图能对应起来。
 	// 之所以有这么一句，是为了在do_exec中判断参数个数时使用。遇到等于0的arg_stack成员，表示参数已经全部遍历结束了。
+	// 1. 为什么要写得这么麻烦？直接用arg_stack[stack_len] = 0 行吗？
+	// 2. 不行。arg_stack[stack_len] = 0 只用一个字节存储数据，而
+	// 	下面的语句用4个字节存储数据。
 	*((int*)(&arg_stack[stack_len])) = 0;
 	// 
 	stack_len += sizeof(char*);
@@ -89,7 +94,9 @@ PUBLIC int execv(const char *path, char * argv[])
 		// 阻碍我理解这个函数的问题，先入为主，认为，这个函数构建的供被调用程序echo的main函数调用的栈，应该包含int argc参数。这是错误的。它只构建了包含char **argv的栈。受书中图影响。后来，
 		// 我在do_exec中找到了int argc构建。
 		// 这么细节的问题，我最终会忘记，面试的时候也无法跟别人说。那么，耗费这么多时间弄清楚它的价值是什么？
+		// 在哪里用到了*q?
 		*q++ = &arg_stack[stack_len];
+
 
 		assert(stack_len + strlen(*p) + 1 < PROC_ORIGIN_STACK);
 		// *p是参数字符串，arg_stack[stack_len]是什么？是具体的值吗？对应于汇编中的eax，而&arg_stack[stack_len]是汇编中的[eax]。
@@ -99,12 +106,19 @@ PUBLIC int execv(const char *path, char * argv[])
 		// 若没有使用分页机制等内存管理机制，可以文件或内存中查看二进制数据，验证上面的推测。
 		strcpy(&arg_stack[stack_len], *p);
 		// 这块内存的长度
+		// 0. 上面的注释，是错误的。
+		// 1. strlen(*p)的结果，并不是内存的长度，而是*p的值（一个内存地址）中指向的内存
+		// 	中的数据。
+		// 3. 为何不是内存的长度？这和strlen的实现有关。strlen计算*p指向的内存中的数据的长度
+		// 	，使用的是[*p]，而不是*p。
+		// 4. 对上面的strcpy语句的理解，是正确的。为啥对strlen的理解不正确呢？
+		// 	抱歉，这个问题，没有任何意义，我也不知道为啥会理解错误。
 		stack_len += strlen(*p);
 		// 由于存储的是字符串，需要在末尾加0，内存长度也要加1个单位，即加1个字节。
-		// 上面的注释不正确，存储的是内存地址。不知道为啥要加0。
+		// 上面的注释不正确，存储的是内存地址。不知道为啥要加0。--》 更正，这句是错误的。
 		// 我写代码的时候，很难写出这句。我不觉得有必要写这句。
 		// 我不理解，strcpy(&arg_stack[stack_len], *p) 用 &，这里用arg_stack[stack_len]，后面能不能也用 &arg_stack[stack_len]。
-		// 仍不失很理解啊。两者都是给某个内存地址的内存赋值。这是正确的废话。赋值，当然是将数据放到某片内存中。前者，是函数要求那个参数是一个内存地址，而后者，要求直接对内存中的数据进行操作。
+		// 仍不是很理解啊。两者都是给某个内存地址的内存赋值。这是正确的废话。赋值，当然是将数据放到某片内存中。前者，是函数要求那个参数是一个内存地址，而后者，要求直接对内存中的数据进行操作。
 		// 就这样。
 		// 为啥要加个0，我仍然不明白。存疑存疑！
 		arg_stack[stack_len] = 0;
