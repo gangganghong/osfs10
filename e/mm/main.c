@@ -102,7 +102,9 @@ PRIVATE void init_mm()
  *****************************************************************************/
 PUBLIC int alloc_mem(int pid, int memsize)
 {
+	// 在fork中已经写过注释了。
 	assert(pid >= (NR_TASKS + NR_NATIVE_PROCS));
+	// 为进程分配的内存不能大于进程内存的最大值。
 	if (memsize > PROC_IMAGE_SIZE_DEFAULT) {
 		panic("unsupported memory request: %d. "
 		      "(should be less than %d)",
@@ -110,6 +112,10 @@ PUBLIC int alloc_mem(int pid, int memsize)
 		      PROC_IMAGE_SIZE_DEFAULT);
 	}
 
+	// 1. 进程的内存空间是连续的。
+	// 2. 从 PROCS_BASE 开始，pid 是 (NR_TASKS + NR_NATIVE_PROCS) 的进程的初始地址是
+	// 	PROCS_BASE。
+	// 3. 这类细节问题，今后一律用“举例 + 归纳法”去理解。
 	int base = PROCS_BASE +
 		(pid - (NR_TASKS + NR_NATIVE_PROCS)) * PROC_IMAGE_SIZE_DEFAULT;
 

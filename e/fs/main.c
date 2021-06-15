@@ -149,6 +149,7 @@ PRIVATE void init_fs()
 		sb->sb_dev = NO_DEV;
 
 	/* open the device: hard disk */
+	// 向哪个进程发送消息？
 	MESSAGE driver_msg;
 	driver_msg.type = DEV_OPEN;
 	driver_msg.DEVICE = MINOR(ROOT_DEV);
@@ -189,6 +190,7 @@ PRIVATE void mkfs()
 	/*      super block     */
 	/************************/
 	/* get the geometry of ROOTDEV */
+	// 向哪个进程发送消息？
 	struct part_info geo;
 	driver_msg.type		= DEV_IOCTL;
 	driver_msg.DEVICE	= MINOR(ROOT_DEV);
@@ -306,22 +308,32 @@ PRIVATE void mkfs()
 	/*       inodes         */
 	/************************/
 	/* inode of `/' */
+	// 1. 留意这里使用缓存fsbuf的方法。对二进制数据而言，不存在什么struct。
+	// 2. 可是，却能强制用struct来读写一片内存空间。
+	// 3. 先把inodes等放到缓存，再写入到硬盘。
 	memset(fsbuf, 0, SECTOR_SIZE);
 	struct inode * pi = (struct inode*)fsbuf;
 	pi->i_mode = I_DIRECTORY;
+	// 根目录的大小。因为根目录中有5个文件，即有5个目录项，所以，根目录大小是DIR_ENTRY_SIZE * 5。
 	pi->i_size = DIR_ENTRY_SIZE * 5; /* 5 files:
 					  * `.',
 					  * `dev_tty0', `dev_tty1', `dev_tty2',
 					  * `cmd.tar'
 					  */
 	pi->i_start_sect = sb.n_1st_sect;
+	// 这是什么？
 	pi->i_nr_sects = NR_DEFAULT_FILE_SECTS;
 	/* inode of `/dev_tty0~2' */
 	for (i = 0; i < NR_CONSOLES; i++) {
 		pi = (struct inode*)(fsbuf + (INODE_SIZE * (i + 1)));
 		pi->i_mode = I_CHAR_SPECIAL;
 		pi->i_size = 0;
+		// 终端需要使用硬盘的扇区吗？我认为，不需要。但是，这里却为它安排了扇区。
+		// 理解不了。我以为，把终端的初始扇区设置为0，也可以。因为它使用的扇区数被设置成
+		// 了0。使用MAKE_DEV，只不过使用一个通用的宏而已。
+		// 经测试，并不行。i_start_sec还是设备号，在其他地方，有验证终端的设备号必须是4。
 		pi->i_start_sect = MAKE_DEV(DEV_CHAR_TTY, i);
+		// pi->i_start_sect = 0;
 		pi->i_nr_sects = 0;
 	}
 	/* inode of `/cmd.tar' */
@@ -338,6 +350,9 @@ PRIVATE void mkfs()
 	memset(fsbuf, 0, SECTOR_SIZE);
 	struct dir_entry * pde = (struct dir_entry *)fsbuf;
 
+	// 1. inode_nr 是什么？是inode-map中的索引还是inode-array中的索引？
+	// 2. 是inode-map的索引。
+	// 3. inode-array[0]是inode-map[1]，是根目录的inode。  
 	pde->inode_nr = 1;
 	strcpy(pde->name, ".");
 
@@ -347,6 +362,8 @@ PRIVATE void mkfs()
 		pde->inode_nr = i + 2; /* dev_tty0's inode_nr is 2 */
 		sprintf(pde->name, "dev_tty%d", i);
 	}
+	// cmd.tar 的inode在inode-map中的索引是NR_CONSOLES + 2。
+	// 安装cmd.tar，在本函数为cm.tar创建inode、inode-map、目录项，用dd命令往磁盘写入数据。
 	(++pde)->inode_nr = NR_CONSOLES + 2;
 	strcpy(pde->name, "cmd.tar");
 	WR_SECT(ROOT_DEV, sb.n_1st_sect);

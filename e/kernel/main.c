@@ -188,6 +188,10 @@ void untar(const char * filename)
 	char buf[SECTOR_SIZE * 16];
 	int chunk = sizeof(buf);
 
+	// 1. 这种解包的方法，前提是：每个文件都占用若干扇区。
+	// 2. 每个文件都不跨域扇区。
+	// 3. 第2点中说得不对。文件可能跨越扇区，但是一个扇区不会存储两个文件的数据。
+	// 4. 如此，硬盘空间浪费很严重。
 	while (1) {
 		read(fd, buf, SECTOR_SIZE);
 		if (buf[0] == 0)
@@ -196,6 +200,16 @@ void untar(const char * filename)
 		struct posix_tar_header * phdr = (struct posix_tar_header *)buf;
 
 		/* calculate the file size */
+		// phdr->size 是八进制（Octal）的字符串，这个代码片段把它换算成十进制整型。
+		// 能理解，自己想出这个算法，好像不是很自然。
+		// 我还担忧f_len这个加法等式把不同位置的数字混合在一起。
+		// *p - '0'，十进制数。又为这个常识，整整纠结了21分钟。
+		// 若我再在这种细节上为难自己，就告诉自己：用归纳法总结出了这个公式。
+		// 字符'0'，对应的整型数0，ascii码48。
+		// 字符'1'，对应的整型数1，ascii码49。
+		// 字符'2'，对应的整型数2，ascii码50。
+		// 字符'3'，对应的整型数3，ascii码51。
+		// 怎么把字符`3`转换成对应的整型数？计算公式是：51 - 48 = 51 - '0'。
 		char * p = phdr->size;
 		int f_len = 0;
 		while (*p)
@@ -211,6 +225,10 @@ void untar(const char * filename)
 		printf("    %s (%d bytes)\n", phdr->name, f_len);
 		while (bytes_left) {
 			int iobytes = min(chunk, bytes_left);
+			// 假如iobytes等于SECTOR_SIZE。
+			// 我会写成readd(fd, buf, iobytes / SECTOR_SIZE * SECTOR_SIZE)。
+			// 当剩余数据的大小X，512 < X < 1024时，我的写法就不能读取到全部数据。
+			// 很难想到这种小技巧。
 			read(fd, buf,
 			     ((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE);
 			write(fdout, buf, iobytes);
@@ -242,8 +260,11 @@ void shabby_shell(const char * tty_name)
 	char rdbuf[128];
 
 	while (1) {
+		// write的参数1是前面open的返回值fd_stdout。
 		write(1, "$ ", 2);
+		// read的参数0是前面open的返回值fd_stdin。
 		int r = read(0, rdbuf, 70);
+		// 字符串的末尾应该是0。r <= 70。把末尾的\n替换成了0。
 		rdbuf[r] = 0;
 
 		int argc = 0;
@@ -252,6 +273,13 @@ void shabby_shell(const char * tty_name)
 		char * s;
 		int word = 0;
 		char ch;
+		// 把"echo hello world"这样的字符串分割成三个单词存储到argv。
+		// 我写出这种算法，可能要耗费一点时间，想出这种算法，也有点费劲。
+		// 这其实只是常规操作而已。
+		// 算法：
+		// 1. 使用word标识是否记录了一个单词的开头。0未记录，1记录了。
+		// 2. 当前字符非空非0 && word == 0，记录当前字符的位置，设置word = 1。
+		// 3. 当前字符是空或0 && word == 1，把一个单词入栈，要在末尾加0，设置word = 0。
 		do {
 			ch = *p;
 			if (*p != ' ' && *p != 0 && !word) {
@@ -268,7 +296,10 @@ void shabby_shell(const char * tty_name)
 		argv[argc] = 0;
 
 		int fd = open(argv[0], O_RDWR);
+		// 硬盘中不存在文件argv[0]
 		if (fd == -1) {
+			// 打印输入数据rebuf。
+			// 由于读取数据时，设置rdbuf[0] = 0，所以，可以通过rdbuf[0]判断对错。
 			if (rdbuf[0]) {
 				write(1, "{", 1);
 				write(1, rdbuf, r);
@@ -276,6 +307,7 @@ void shabby_shell(const char * tty_name)
 			}
 		}
 		else {
+			// 执行命令并未使用前文打开的文件，所以，需要关闭。
 			close(fd);
 			int pid = fork();
 			if (pid != 0) { /* parent */
@@ -301,20 +333,26 @@ void shabby_shell(const char * tty_name)
  *****************************************************************************/
 void Init()
 {
+	// open的返回值是什么？inode？file_desc_table中的索引？
 	int fd_stdin  = open("/dev_tty0", O_RDWR);
 	assert(fd_stdin  == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
 	assert(fd_stdout == 1);
 
+	// 只要使用了printf，就必须先打开了终端文件，否则会报错。
 	printf("Init() is running ...\n");
 
 	/* extract `cmd.tar' */
+	// 把文件从tar包中抽取出来。
 	untar("/cmd.tar");
 			
 
+	// 终端名
+	// 注意这个字符串数组的写法。[]是非定长。
 	char * tty_list[] = {"/dev_tty1", "/dev_tty2"};
 
 	int i;
+	// 字符串的元素个数sizeof(tty_list) / sizeof(tty_list[0])
 	for (i = 0; i < sizeof(tty_list) / sizeof(tty_list[0]); i++) {
 		int pid = fork();
 		if (pid != 0) { /* parent process */
@@ -322,6 +360,7 @@ void Init()
 		}
 		else {	/* child process */
 			printf("[child is running, pid:%d]\n", getpid());
+			// 在后面又打开了终端文件，这里若不关闭，后面终端文件的描述符索引就不是0、1。
 			close(fd_stdin);
 			close(fd_stdout);
 			

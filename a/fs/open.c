@@ -155,6 +155,7 @@ PRIVATE struct inode * create_file(char * path, int flags)
 	if (strip_path(filename, path, &dir_inode) != 0)
 		return 0;
 
+	// inode_nr是inode-map的索引，从alloc_imap_bit的实现代码中能看出。
 	int inode_nr = alloc_imap_bit(dir_inode->i_dev);
 	int free_sect_nr = alloc_smap_bit(dir_inode->i_dev,
 					  NR_DEFAULT_FILE_SECTS);
@@ -259,6 +260,7 @@ PRIVATE int alloc_imap_bit(int dev)
 			break;
 		}
 
+		// inode_nr 是在inode-map中的索引，第0个bit是保留位。
 		return inode_nr;
 	}
 

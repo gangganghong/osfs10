@@ -113,6 +113,13 @@ PUBLIC int do_open()
 			int dev = pin->i_start_sect;
 			driver_msg.DEVICE = MINOR(dev);
 			assert(MAJOR(dev) == 4);
+			// MAJOR(dev)  {TASK_TTY} 
+			// 1. dd_map[MAJOR(dev)].driver_nr的值是0，不知道怎么计算出来的。
+			// 2. 我挺愚蠢的！
+			// 3. dd_map[MAJOR(dev)] 的值是dd_map[4]即 {TASK_TTY}。
+			// 4. {TASK_TTY} 是 struct dev_drv_map 。
+			// 5. struct dev_drv_map 只有一个成员 driver_nr。
+			// 6. dd_map[MAJOR(dev)].driver_nr 就是 TASK_TTY，即 0。 
 			assert(dd_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
 			send_recv(BOTH,
 				  dd_map[MAJOR(dev)].driver_nr,
