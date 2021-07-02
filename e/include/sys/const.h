@@ -119,6 +119,7 @@
 #define	NR_IRQ		16	/* Number of IRQs */
 #define	CLOCK_IRQ	0
 #define	KEYBOARD_IRQ	1
+// cascade 级联
 #define	CASCADE_IRQ	2	/* cascade enable for 2nd AT controller */
 #define	ETHER_IRQ	3	/* default ethernet interrupt vector */
 #define	SECONDARY_IRQ	3	/* RS232 interrupt vector for port 2 */
@@ -238,6 +239,7 @@ enum msgtype {
 #define	MAKE_DEV(a,b)		((a << MAJOR_SHIFT) | b)
 /* separate major and minor numbers from device number */
 #define	MAJOR(x)		((x >> MAJOR_SHIFT) & 0xFF)
+// minor 次要
 #define	MINOR(x)		(x & 0xFF)
 
 #define	INVALID_INODE		0

@@ -109,6 +109,11 @@ PUBLIC int search_file(char * path)
 	 * Search the dir for the file.
 	 */
 	int dir_blk0_nr = dir_inode->i_start_sect;
+	// 看不懂这句。
+	// 1. 这一句，保证，遍历数据区时，至少读取一个扇区。
+	// 2. 不减1会怎么样？
+	// 3. 当dir_inode->i_size等于SECTOR_SIZE时，nr_dir_blks的值是2。
+	// 4. 在下面的循环中，会循环两次。显然，只需要循环一次就够了。  
 	int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE - 1) / SECTOR_SIZE;
 	int nr_dir_entries =
 	  dir_inode->i_size / DIR_ENTRY_SIZE; /**
@@ -164,6 +169,7 @@ PUBLIC int search_file(char * path)
  * 
  * @return Zero if success, otherwise the pathname is not valid.
  *****************************************************************************/
+// struct inode** ppinode 能改成 struct inode* ppinode 吗？我以为可以。
 PUBLIC int strip_path(char * filename, const char * pathname,
 		      struct inode** ppinode)
 {
@@ -186,6 +192,7 @@ PUBLIC int strip_path(char * filename, const char * pathname,
 	}
 	*t = 0;
 
+	// 沮丧！对双指针的理解，又没有之前那么熟练了。
 	*ppinode = root_inode;
 
 	return 0;

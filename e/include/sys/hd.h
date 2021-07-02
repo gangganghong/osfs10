@@ -245,7 +245,9 @@ struct part_info {
 struct hd_info
 {
 	int			open_cnt;
+	// NR_PRIM_PER_DRIVE 是5。
 	struct part_info	primary[NR_PRIM_PER_DRIVE];
+	// NR_SUB_PER_DRIVE 是16。
 	struct part_info	logical[NR_SUB_PER_DRIVE];
 };
 
@@ -253,12 +255,17 @@ struct hd_info
 /***************/
 /* DEFINITIONS */
 /***************/
+// 没啥需要研究的。操作硬盘的文档是这么写的。非要研究，只需要记住这些命令而已。
 #define	HD_TIMEOUT		10000	/* in millisec */
 #define	PARTITION_TABLE_OFFSET	0x1BE
 #define ATA_IDENTIFY		0xEC
 #define ATA_READ		0x20
 #define ATA_WRITE		0x30
 /* for DEVICE register. */
+// lba设置Device Register的第6个bit，这个bit控制寻址模式是LBA还是CHS。
+// drv设置Device Regster的第4个bit，这个bit控制使用主硬盘还是从硬盘。
+// bit的序号的初始值都是0。
+// | 0xA0 可以不要。
 #define	MAKE_DEVICE_REG(lba,drv,lba_highest) (((lba) << 6) |		\
 					      ((drv) << 4) |		\
 					      (lba_highest & 0xF) | 0xA0)

@@ -33,16 +33,26 @@ struct dev_drv_map {
 struct super_block {
 	u32	magic;		  /**< Magic number */
 	u32	nr_inodes;	  /**< How many inodes */
+	// 1. 文件系统的总共扇区数量。
+	// 2. 只是指文件系统这个数据结构占用的扇区的数量还是连文件内容占用的数据区的扇区也包括在内？
+	// 3. 后者。只存储文件系统的数据结构不可能占用那么多扇区。
 	u32	nr_sects;	  /**< How many sectors */
 	u32	nr_imap_sects;	  /**< How many inode-map sectors */
 	u32	nr_smap_sects;	  /**< How many sector-map sectors */
+	// 1. 第一个数据扇区的扇区号是多少？
+	// 2. 从根目录所在扇区开始还是从根目录之后的扇区开始？
 	u32	n_1st_sect;	  /**< Number of the 1st data sector */
 	u32	nr_inode_sects;   /**< How many inode sectors */
 	u32	root_inode;       /**< Inode nr of root directory */
 	u32	inode_size;       /**< INODE_SIZE */
+	// 1. inode_isize_off 是在struct中的偏移吗？没体会到它有什么用。
+	// 2. 从fs/main.c中的这句：sb.inode_isize_off= (int)&x.i_size - (int)&x 看出，
+	// 3. inode_isize_off 是在struct中的偏移。
 	u32	inode_isize_off;  /**< Offset of `struct inode::i_size' */
 	u32	inode_start_off;  /**< Offset of `struct inode::i_start_sect' */
+	// 根目录中的目录项
 	u32	dir_ent_size;     /**< DIR_ENTRY_SIZE */
+	// 不明白。
 	u32	dir_ent_inode_off;/**< Offset of `struct dir_entry::inode_nr' */
 	u32	dir_ent_fname_off;/**< Offset of `struct dir_entry::name' */
 

@@ -505,9 +505,11 @@ PUBLIC struct inode * get_inode(int dev, int num)
 	q->i_num = num;
 	q->i_cnt = 1;
 
+	// 这几句，又很难懂。
 	struct super_block * sb = get_super_block(dev);
 	int blk_nr = 1 + 1 + sb->nr_imap_sects + sb->nr_smap_sects +
 		((num - 1) / (SECTOR_SIZE / INODE_SIZE));
+	// RD_SECT把数据读入fsbuf中。
 	RD_SECT(dev, blk_nr);
 	struct inode * pinode =
 		(struct inode*)((u8*)fsbuf +
@@ -549,6 +551,8 @@ PUBLIC void sync_inode(struct inode * p)
 {
 	struct inode * pinode;
 	struct super_block * sb = get_super_block(p->i_dev);
+	// ((p->i_num - 1) / (SECTOR_SIZE / INODE_SIZE)) 理解起来，费劲。
+	// 把inode占用的空间折算成扇区。
 	int blk_nr = 1 + 1 + sb->nr_imap_sects + sb->nr_smap_sects +
 		((p->i_num - 1) / (SECTOR_SIZE / INODE_SIZE));
 	RD_SECT(p->i_dev, blk_nr);

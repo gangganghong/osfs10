@@ -58,6 +58,7 @@ PUBLIC int do_rdwt()
 		int t = fs_msg.type == READ ? DEV_READ : DEV_WRITE;
 		fs_msg.type = t;
 
+		// 文件的第一个扇区的LBA，是设备号？奇怪。
 		int dev = pin->i_start_sect;
 		assert(MAJOR(dev) == 4);
 
@@ -82,9 +83,14 @@ PUBLIC int do_rdwt()
 			pos_end = min(pos + len, pin->i_nr_sects * SECTOR_SIZE);
 
 		int off = pos % SECTOR_SIZE;
+		// 1. SECTOR_SIZE_SHIFT 是9，pos>>SECTOR_SIZE_SHIFT 等价于 pos >> 9。
+		// 2. pos的单位是字节，pos >> 9 把pos转为扇区数量。
+		// 3. 2的10次方是1024，2的9次方是512。
 		int rw_sect_min=pin->i_start_sect+(pos>>SECTOR_SIZE_SHIFT);
 		int rw_sect_max=pin->i_start_sect+(pos_end>>SECTOR_SIZE_SHIFT);
 
+		// 1. chunk是扇区数量。
+		// 2. 初始扇区是2，结束扇区是3，共有多少个扇区？3 - 2 + 1 = 2 个扇区。
 		int chunk = min(rw_sect_max - rw_sect_min + 1,
 				FSBUF_SIZE >> SECTOR_SIZE_SHIFT);
 

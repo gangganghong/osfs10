@@ -308,6 +308,9 @@ PRIVATE int alloc_smap_bit(int dev, int nr_sects_to_alloc)
 				/* loop until a free bit is found */
 				if (fsbuf[j] == 0xFF) continue;
 				for (; ((fsbuf[j] >> k) & 1) != 0; k++) {}
+				// 1. 为什么减1？
+				// 2. 这个问题，阻碍了我好几天。
+				// 3. 因为，sector-map的第0个bit是保留位。  
 				free_sect_nr = (i * SECTOR_SIZE + j) * 8 +
 					k - 1 + sb->n_1st_sect;
 			}
@@ -348,11 +351,17 @@ PRIVATE struct inode * new_inode(int dev, int inode_nr, int start_sect)
 {
 	struct inode * new_inode = get_inode(dev, inode_nr);
 
+	// 不管new_inode的值是多少，都在这个函数中擦除。
+	// 为什么要这么做？因为，这个函数的使用场景是创建文件。
+	// 在非创建文件时，直接使用get_inode。
+	// 在get_inode中有一个分支结果是返回已经被使用的inode，但是本函数仍然重设i_cnt为1。
+	// 因为，在本函数调用get_inode，一定不会返回那个分支结果。
 	new_inode->i_mode = I_REGULAR;
 	new_inode->i_size = 0;
 	new_inode->i_start_sect = start_sect;
 	new_inode->i_nr_sects = NR_DEFAULT_FILE_SECTS;
 
+	// 在get_inode中就已经修改了new_inode的i_dev，在这里又修改，多余吗？
 	new_inode->i_dev = dev;
 	new_inode->i_cnt = 1;
 	new_inode->i_num = inode_nr;
@@ -377,6 +386,7 @@ PRIVATE void new_dir_entry(struct inode *dir_inode,int inode_nr,char *filename)
 {
 	/* write the dir_entry */
 	int dir_blk0_nr = dir_inode->i_start_sect;
+	// 保证下面的循环至少执行一次。
 	int nr_dir_blks = (dir_inode->i_size + SECTOR_SIZE) / SECTOR_SIZE;
 	int nr_dir_entries =
 		dir_inode->i_size / DIR_ENTRY_SIZE; /**
@@ -398,6 +408,10 @@ PRIVATE void new_dir_entry(struct inode *dir_inode,int inode_nr,char *filename)
 			if (++m > nr_dir_entries)
 				break;
 
+			// 两个if条件能颠倒吗？
+			// 最好的验证方法是，代入具体的数组。
+			// 心算效率太低，用笔算吧。
+			// 经过计算，可以颠倒。
 			if (pde->inode_nr == 0) { /* it's a free slot */
 				new_de = pde;
 				break;
@@ -407,6 +421,13 @@ PRIVATE void new_dir_entry(struct inode *dir_inode,int inode_nr,char *filename)
 		    new_de)              /* free slot is found */
 			break;
 	}
+	// 1. 这个条件，难理解。使用某个扇区的第一个pde。
+	// 2. 终于理解了。
+	// 3. 方法是，代入具体数据。
+	// 4. 初始状态，nr_dir_entries 是 5。根目录中的5个目录项都不是空闲的。
+	// 5. 注意循环中的递增语句：pde++。
+	// 6. 当这5个目录项都不能使用时，pde指向第6个目录项。
+	// 7. 第6个目录项必定是空闲的目录项。理由，说不清楚。 
 	if (!new_de) { /* reached the end of the dir */
 		new_de = pde;
 		dir_inode->i_size += DIR_ENTRY_SIZE;

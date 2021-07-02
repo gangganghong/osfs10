@@ -106,8 +106,11 @@ PRIVATE void init_hd()
 	printl("{HD} NrDrives:%d.\n", *pNrDrives);
 	assert(*pNrDrives);
 
+	// 设置硬盘驱动
 	put_irq_handler(AT_WINI_IRQ, hd_handler);
+	// 打开主8259A上挂载从8259A的端口。
 	enable_irq(CASCADE_IRQ);
+	// 打开8259A上的硬盘端口。
 	enable_irq(AT_WINI_IRQ);
 
 	for (i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++)
@@ -165,6 +168,7 @@ PRIVATE void hd_close(int device)
  *****************************************************************************/
 PRIVATE void hd_rdwt(MESSAGE * p)
 {
+	// 从设备号计算出硬盘编号
 	int drive = DRV_OF_DEV(p->DEVICE);
 
 	u64 pos = p->POSITION;
@@ -175,8 +179,21 @@ PRIVATE void hd_rdwt(MESSAGE * p)
 	 */
 	assert((pos & 0x1FF) == 0);
 
+	// 这几行代码能解答我的疑问。
+	// SECTOR_SIZE_SHIFT 是 9。
+	// pos >> SECTOR_SIZE_SHIFT 把字节数换算成扇区数。
 	u32 sect_nr = (u32)(pos >> SECTOR_SIZE_SHIFT); /* pos / SECTOR_SIZE */
+	// NR_SUB_PER_DRIVE 是 64。
+	// 这是计算出次设备号吗？不是。费解。
+	// 断点打印数据很多次，p->DEVICE的值都是32，logidx的值都是16，sect_nr的值在递增。
 	int logidx = (p->DEVICE - MINOR_hd1a) % NR_SUB_PER_DRIVE;
+	// 1. 这句，在断点调试中，是 sect_nr += hd_info[drive].logical[16].base
+	// 2. hd_info[drive].logical[16]，很特殊。
+	// 3. 我们把第1个主分区作为主扩展分区。
+	// 4. 从代码执行情况看，在主扩展分区读写数据。
+	// 5. 主扩展分区是第1个主分区，因此，第一个逻辑分区的次设备号是16。
+	// 5. 主扩展分区读写数据的基础地址是第一个逻辑分区的初始LBA地址。
+	// 6. 而hd_info[drive].logical[16].base就是这个LBA地址。 
 	sect_nr += p->DEVICE < MAX_PRIM ?
 		hd_info[drive].primary[p->DEVICE].base :
 		hd_info[drive].logical[logidx].base;
@@ -198,6 +215,7 @@ PRIVATE void hd_rdwt(MESSAGE * p)
 		int bytes = min(SECTOR_SIZE, bytes_left);
 		if (p->type == DEV_READ) {
 			interrupt_wait();
+			// 从硬盘的什么位置开始读？在前面向硬盘发送cmd时指定了读取数据的位置。
 			port_read(REG_DATA, hdbuf, SECTOR_SIZE);
 			phys_copy(la, (void*)va2la(TASK_HD, hdbuf), bytes);
 		}
@@ -288,11 +306,13 @@ PRIVATE void get_part_table(int drive, int sect_nr, struct part_ent * entry)
 PRIVATE void partition(int device, int style)
 {
 	int i;
+	// 计算结果是硬盘的序号，第0块或第1块。
 	int drive = DRV_OF_DEV(device);
 	struct hd_info * hdi = &hd_info[drive];
 
 	struct part_ent part_tbl[NR_SUB_PER_DRIVE];
 
+	// 主分区
 	if (style == P_PRIMARY) {
 		get_part_table(drive, drive, part_tbl);
 
@@ -307,28 +327,36 @@ PRIVATE void partition(int device, int style)
 			hdi->primary[dev_nr].size = part_tbl[i].nr_sects;
 
 			if (part_tbl[i].sys_id == EXT_PART) /* extended */
+				// device + dev_nr 结果是什么？
 				partition(device + dev_nr, P_EXTENDED);
 		}
 		assert(nr_prim_parts != 0);
 	}
-	else if (style == P_EXTENDED) {
+	else if (style == P_EXTENDED) {  // 扩展分区
+		// NR_PRIM_PER_DRIVE 是 5
+		// 计算主分区的次设备号
 		int j = device % NR_PRIM_PER_DRIVE; /* 1~4 */
+		// 主分区的LBA地址
 		int ext_start_sect = hdi->primary[j].base;
 		int s = ext_start_sect;
+		// NR_SUB_PER_PART 是 16
+		// 扩展分区中的逻辑分区的初始地址
 		int nr_1st_sub = (j - 1) * NR_SUB_PER_PART; /* 0/16/32/48 */
 
 		for (i = 0; i < NR_SUB_PER_PART; i++) {
+			// 设备的次设备号不能重复，但是，这里的dev_nr包含了[0,9]，如何理解？
 			int dev_nr = nr_1st_sub + i;/* 0~15/16~31/32~47/48~63 */
 
 			get_part_table(drive, s, part_tbl);
-
+			// 逻辑分区的元数据：初始地址，大小
 			hdi->logical[dev_nr].base = s + part_tbl[0].start_sect;
 			hdi->logical[dev_nr].size = part_tbl[0].nr_sects;
-
+			// 下一个子扩展分区的初始地址
 			s = ext_start_sect + part_tbl[1].start_sect;
 
 			/* no more logical partitions
 			   in this extended partition */
+			// 第15个子扩展分区的DPT的第二个表项没有指向其他子扩展分区。
 			if (part_tbl[1].sys_id == NO_PART)
 				break;
 		}

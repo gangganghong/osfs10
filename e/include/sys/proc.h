@@ -67,6 +67,7 @@ struct proc {
 
 	int exit_status; /**< for parent */
 
+	// filp：文件描述符；财政投资贷款计划；翻转。
 	struct file_desc * filp[NR_FILES];
 };
 
